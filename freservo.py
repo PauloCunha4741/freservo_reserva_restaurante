@@ -190,7 +190,7 @@ def realizarReservaRestaurante(restaurante):
         print(f"{key}: {infos_reserva[key]}")
 
     with open("reservas.txt", "a") as arquivo:
-        arquivo.write(f"\n {infos_reserva['Nome']} = {infos_reserva}")
+        arquivo.write(f"\n{infos_reserva['Nome']} = {infos_reserva}")
 
     return restaurante
 
