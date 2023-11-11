@@ -1,5 +1,5 @@
 import os
-from datetime import date, timedelta, datetime
+from datetime import date, datetime, timedelta
 
 dicionario_de_restaurantes = {
     "Cais Rooftop Lounge Bar": [
@@ -62,12 +62,11 @@ lista_culinaria = [
     "Café",
 ]
 lista_faixa_preco = ["$", "$$", "$$$", "$$$$", "$$$$$"]
-
+parar_execucao = False
 
 def printItemsLista(lista: []):
     for i in range(len(lista)):
         print(f"{i+1}: {lista[i]}")
-
 
 def criarListaNumeros(lista: []):
     nova_lista = []
@@ -75,8 +74,7 @@ def criarListaNumeros(lista: []):
         nova_lista.append(i + 1)
     return nova_lista
 
-
-def realizarReservaRestaurante(restaurante):
+def realizarReservaRestaurante(restaurante, editando = False, reserva_encontrada = ""):
     infos_reserva = {}
     lista_turnos_disponiveis = dicionario_de_restaurantes[restaurante][4]
     lista_campos_reserva = ["Quantidade de Pessoas", "Nome", "Telefone", "Email"]
@@ -88,15 +86,17 @@ def realizarReservaRestaurante(restaurante):
     for i in range(5):
         dias_soma = timedelta(days=i)
         lista_datas.append((data_atual + dias_soma).strftime("%d/%m/%Y"))
-
-    os.system("clear") or None
+        
+    if not editando:
+        os.system("clear") or None
+    
     while data_selecionada == "":
         print("Qual a data que deseja realizar a reserva:\n")
 
         for i in range(len(lista_datas)):
             print(f"{i+1}: {str(lista_datas[i])}")
         data_selecionada = input(
-            "\nInsira o número ou data que deseja selecionar."
+            "\nInsira o número ou a data que deseja selecionar."
             "\nCaso deseje voltar a selecionar novamente o método de pesquisa do estabelecimento digite 0 ou nada: "
         )
         if data_selecionada.isdigit():
@@ -171,186 +171,354 @@ def realizarReservaRestaurante(restaurante):
     infos_reserva["Turno"] = turno_selecionado
 
     os.system("clear") or None
-
-    print(
-        "Para finalizar a reserva por favor insira as informações solicitadas abaixo:"
-    )
-    for campo in lista_campos_reserva:
-        info_usuario = input(f"{campo}: ")
-        infos_reserva[campo] = info_usuario
+    if editando:
+        print(
+            "Para finalizar a edição da reserva por favor insira as informações solicitadas abaixo:"
+        )
+        for campo in lista_campos_reserva:
+            if campo != "Nome":
+                info_usuario = input(f"{campo}: ")
+                infos_reserva[campo] = info_usuario
+            else:
+                reserva_encontrada_formatada = reserva_encontrada.split(" = ")
+                infos_reserva["Nome"] = reserva_encontrada_formatada[0]
+            
+    else:
+        print(
+            "Para finalizar a reserva por favor insira as informações solicitadas abaixo:"
+        )
+        for campo in lista_campos_reserva:
+            info_usuario = input(f"{campo}: ")
+            infos_reserva[campo] = info_usuario
+    
 
     os.system("clear") or None
-    print(
-        "===================================================\n"
-        "RESERVA FINALIZADA!\n"
-        "===================================================\n"
-        "\nAbaixo segue resumo da reserva:\n"
-    )
-    for key in infos_reserva:
-        print(f"{key}: {infos_reserva[key]}")
+    if editando:
+        print(
+            "===================================================\n"
+            "EDIÇÃO DE RESERVA FINALIZADA!\n"
+            "===================================================\n"
+            "\nAbaixo segue resumo da reserva:\n"
+        )
+        for key in infos_reserva:
+            print(f"{key}: {infos_reserva[key]}")
+        
+        with open("reservas.txt", "r") as arquivo:
+                    linhas = arquivo.readlines()
 
-    with open("reservas.txt", "a") as arquivo:
-        arquivo.write(f"\n{infos_reserva['Nome']} = {infos_reserva}")
+        with open("reservas.txt", "w") as arquivo:
+            for linha in linhas:
+                if linha != reserva_encontrada:
+                    arquivo.write(linha)
+                else: 
+                    arquivo.write(f"{infos_reserva['Nome']} = {infos_reserva}")
+    else: 
+        print(
+            "===================================================\n"
+            "RESERVA FINALIZADA!\n"
+            "===================================================\n"
+            "\nAbaixo segue resumo da reserva:\n"
+        )
+        for key in infos_reserva:
+            print(f"{key}: {infos_reserva[key]}")
+
+        with open("reservas.txt", "a") as arquivo:
+            arquivo.write(f"\n{infos_reserva['Nome']} = {infos_reserva}")
 
     return restaurante
 
-
-os.system("clear") or None
-
-print("Olá, bem vindo ao FRESERVO!\n\n")
-restaurante_selecionado = ""
-
-while restaurante_selecionado == "":
-    print(
-        "Escolha como deseja pesquisar o restaurante.\n\n"
-        "Para pesquisar pelo:\n"
-        "Digite 1: Nome do estabelecimento\n"
-        "Digite 2: Filtro de Culinária\n"
-        "Digite 3: Filtro de Faixa de Preço\n"
-        "Digite 4: Filtro de Avaliação Média\n"
-        "Digite 5: Filtro de Localização\n"
-    )
-    escolha = input("Qual a opção desejada. Digite de 1 a 5: ")
-
-    lista_restaurantes_encontrados = []
-
+def filtrarRestaurante():
     os.system("clear") or None
+    restaurante_selecionado = ""
+    while restaurante_selecionado == "":
+        print(
+            "Escolha como deseja pesquisar o restaurante.\n\n"
+            "Para pesquisar pelo:\n"
+            "1: Nome do estabelecimento\n"
+            "2: Filtro de Culinária\n"
+            "3: Filtro de Faixa de Preço\n"
+            "4: Filtro de Avaliação Média\n"
+            "5: Filtro de Localização\n"
+        )
+        escolha = input("Qual a opção desejada. Digite de 1 a 5: ")
 
-    try:
-        escolha = int(escolha)
-        if escolha in [1, 2, 3, 4, 5]:
-            if escolha == 1:
-                estabelecimento = input("Digite o nome do estabelecimento: ")
-                for key in dicionario_de_restaurantes:
-                    if estabelecimento.lower() in key.lower():
-                        lista_restaurantes_encontrados.append(key)
-            elif escolha == 2:
-                print("Escolha o tipo de culinária:")
-                printItemsLista(lista_culinaria)
-                culinaria = input("Qual a opção desejada: ")
-                if culinaria in lista_culinaria:
-                    for key in dicionario_de_restaurantes:
-                        if (
-                            culinaria.lower()
-                            in dicionario_de_restaurantes[key][0].lower()
-                        ):
-                            lista_restaurantes_encontrados.append(key)
-                elif int(culinaria) in criarListaNumeros(lista_culinaria):
-                    for key in dicionario_de_restaurantes:
-                        if (
-                            lista_culinaria[int(culinaria) - 1]
-                            == dicionario_de_restaurantes[key][0]
-                        ):
-                            lista_restaurantes_encontrados.append(key)
-            elif escolha == 3:
-                print("Qual a faixa de preço do estabelecimento que você deseja :")
-                printItemsLista(lista_faixa_preco)
-                faixa_preco = input("Qual a opção desejada: ")
-                if faixa_preco in lista_faixa_preco:
-                    for key in dicionario_de_restaurantes:
-                        if faixa_preco == dicionario_de_restaurantes[key][1]:
-                            lista_restaurantes_encontrados.append(key)
-                elif int(faixa_preco) in criarListaNumeros(lista_faixa_preco):
-                    for key in dicionario_de_restaurantes:
-                        if (int(faixa_preco) * "$") == dicionario_de_restaurantes[key][
-                            1
-                        ]:
-                            lista_restaurantes_encontrados.append(key)
-            elif escolha == 4:
-                avaliacao = input("Digite a avaliação mínima (de 1 a 5): ")
-                if avaliacao.replace(",", "", 1).isdigit():
-                    for key in dicionario_de_restaurantes:
-                        if (
-                            float(avaliacao.replace(",", "."))
-                            <= dicionario_de_restaurantes[key][2]
-                        ):
-                            lista_restaurantes_encontrados.append(key)
-            elif escolha == 5:
-                localizacao = input("Digite o bairro: ")
-                for key in dicionario_de_restaurantes:
-                    if (
-                        localizacao.lower()
-                        in dicionario_de_restaurantes[key][3].lower()
-                    ):
-                        lista_restaurantes_encontrados.append(key)
+        lista_restaurantes_encontrados = []
 
-            os.system("clear") or None
-            houve_selecao = False
-            while not houve_selecao:
-                if len(lista_restaurantes_encontrados) > 0:
-                    print(
-                        "Foi/foram encontrado(s) o(s) seguinte(s) estabelecimentos:\n"
-                    )
-                    for i in range(len(lista_restaurantes_encontrados)):
-                        print(f"{i+1}: {lista_restaurantes_encontrados[i]}")
-                    restaurante_selecionado = input(
-                        "\nInsira o número ou nome do estabelecimento que deseja selecionar."
-                        "\nCaso deseje selecionar novamente o método de pesquisa do estabelecimento digite 0 ou nada: "
-                    )
-                    if restaurante_selecionado.isdigit():
-                        if int(restaurante_selecionado) == 0:
-                            os.system("clear") or None
-                            restaurante_selecionado = ""
-                            houve_selecao = True
-                        elif int(restaurante_selecionado) <= len(
-                            lista_restaurantes_encontrados
+        os.system("clear") or None
+
+        try:
+            escolha = int(escolha)
+            if escolha in [1, 2, 3, 4, 5]:
+                if escolha == 1:
+                    estabelecimento = input("Digite o nome do estabelecimento: ")
+                    for key in dicionario_de_restaurantes:
+                        if estabelecimento.lower() in key.lower():
+                            lista_restaurantes_encontrados.append(key)
+                elif escolha == 2:
+                    print("Escolha o tipo de culinária:")
+                    printItemsLista(lista_culinaria)
+                    culinaria = input("Qual a opção desejada: ")
+                    if culinaria in lista_culinaria:
+                        for key in dicionario_de_restaurantes:
+                            if (
+                                culinaria.lower()
+                                in dicionario_de_restaurantes[key][0].lower()
+                            ):
+                                lista_restaurantes_encontrados.append(key)
+                    elif int(culinaria) in criarListaNumeros(lista_culinaria):
+                        for key in dicionario_de_restaurantes:
+                            if (
+                                lista_culinaria[int(culinaria) - 1]
+                                == dicionario_de_restaurantes[key][0]
+                            ):
+                                lista_restaurantes_encontrados.append(key)
+                elif escolha == 3:
+                    print("Qual a faixa de preço do estabelecimento que você deseja :")
+                    printItemsLista(lista_faixa_preco)
+                    faixa_preco = input("Qual a opção desejada: ")
+                    if faixa_preco in lista_faixa_preco:
+                        for key in dicionario_de_restaurantes:
+                            if faixa_preco == dicionario_de_restaurantes[key][1]:
+                                lista_restaurantes_encontrados.append(key)
+                    elif int(faixa_preco) in criarListaNumeros(lista_faixa_preco):
+                        for key in dicionario_de_restaurantes:
+                            if (int(faixa_preco) * "$") == dicionario_de_restaurantes[key][
+                                1
+                            ]:
+                                lista_restaurantes_encontrados.append(key)
+                elif escolha == 4:
+                    avaliacao = input("Digite a avaliação mínima (de 1 a 5): ")
+                    if avaliacao.replace(",", "", 1).isdigit():
+                        for key in dicionario_de_restaurantes:
+                            if (
+                                float(avaliacao.replace(",", "."))
+                                <= dicionario_de_restaurantes[key][2]
+                            ):
+                                lista_restaurantes_encontrados.append(key)
+                elif escolha == 5:
+                    localizacao = input("Digite o bairro: ")
+                    for key in dicionario_de_restaurantes:
+                        if (
+                            localizacao.lower()
+                            in dicionario_de_restaurantes[key][3].lower()
                         ):
-                            restaurante_selecionado = lista_restaurantes_encontrados[
-                                int(restaurante_selecionado) - 1
-                            ]
-                            restaurante_selecionado = realizarReservaRestaurante(
-                                restaurante_selecionado
-                            )
-                            houve_selecao = True
+                            lista_restaurantes_encontrados.append(key)
+
+                os.system("clear") or None
+                houve_selecao = False
+                while not houve_selecao:
+                    if len(lista_restaurantes_encontrados) > 0:
+                        print(
+                            "Foi/foram encontrado(s) o(s) seguinte(s) estabelecimentos:\n"
+                        )
+                        for i in range(len(lista_restaurantes_encontrados)):
+                            print(f"{i+1}: {lista_restaurantes_encontrados[i]}")
+                        restaurante_selecionado = input(
+                            "\nInsira o número ou nome do estabelecimento que deseja selecionar."
+                            "\nCaso deseje selecionar novamente o método de pesquisa do estabelecimento digite 0 ou nada: "
+                        )
+                        if restaurante_selecionado.isdigit():
+                            if int(restaurante_selecionado) == 0:
+                                os.system("clear") or None
+                                restaurante_selecionado = ""
+                                houve_selecao = True
+                            elif int(restaurante_selecionado) <= len(
+                                lista_restaurantes_encontrados
+                            ):
+                                restaurante_selecionado = lista_restaurantes_encontrados[
+                                    int(restaurante_selecionado) - 1
+                                ]
+                                restaurante_selecionado = realizarReservaRestaurante(
+                                    restaurante_selecionado
+                                )
+                                houve_selecao = True
+                            else:
+                                restaurante_selecionado = ""
+                                os.system("clear") or None
+                                print("===================================================")
+                                print(
+                                    "\nA opção digitada não existe, por favor tente novamente.\n"
+                                )
+                                print("===================================================")
                         else:
-                            restaurante_selecionado = ""
-                            os.system("clear") or None
-                            print("===================================================")
-                            print(
-                                "\nA opção digitada não existe, por favor tente novamente.\n"
-                            )
-                            print("===================================================")
-                    else:
-                        if restaurante_selecionado == "":
-                            os.system("clear") or None
-                            restaurante_selecionado = ""
-                            houve_selecao = True
-                        elif (
-                            restaurante_selecionado.capitalize()
-                            in lista_restaurantes_encontrados
-                        ):
-                            restaurante_selecionado = (
+                            if restaurante_selecionado == "":
+                                os.system("clear") or None
+                                restaurante_selecionado = ""
+                                houve_selecao = True
+                            elif (
                                 restaurante_selecionado.capitalize()
-                            )
-                            restaurante_selecionado = realizarReservaRestaurante(
-                                restaurante_selecionado
-                            )
-                            houve_selecao = True
-                        else:
-                            restaurante_selecionado = ""
-                            os.system("clear") or None
-                            print("===================================================")
-                            print(
-                                "\nA opção digitada não existe, por favor tente novamente.\n"
-                            )
-                            print("===================================================")
-                else:
-                    houve_selecao = True
-                    os.system("clear") or None
-                    print("===================================================")
-                    print("\nNão foram encontrados resultados.\n")
-                    print("===================================================")
-                    print(
-                        "\nSelecione novamente o método de pesquisa do estabelecimento.\n"
-                    )
+                                in lista_restaurantes_encontrados
+                            ):
+                                restaurante_selecionado = (
+                                    restaurante_selecionado.capitalize()
+                                )
+                                restaurante_selecionado = realizarReservaRestaurante(
+                                    restaurante_selecionado
+                                )
+                                houve_selecao = True
+                            else:
+                                restaurante_selecionado = ""
+                                os.system("clear") or None
+                                print("===================================================")
+                                print(
+                                    "\nA opção digitada não existe, por favor tente novamente.\n"
+                                )
+                                print("===================================================")
+                    else:
+                        houve_selecao = True
+                        os.system("clear") or None
+                        print("===================================================")
+                        print("\nNão foram encontrados resultados.\n")
+                        print("===================================================")
+                        print(
+                            "\nSelecione novamente o método de pesquisa do estabelecimento.\n"
+                        )
 
-        else:
+            else:
+                os.system("clear") or None
+                print("===================================================")
+                print("\nA opção digitada não existe, por favor tente novamente.\n")
+                print("===================================================")
+        except ValueError:
             os.system("clear") or None
             print("===================================================")
             print("\nA opção digitada não existe, por favor tente novamente.\n")
             print("===================================================")
-    except ValueError:
+
+def encontrarReserva(nome):
+    reserva_encontrada = []
+    nome_formatado = nome + " = "
+    with open("reservas.txt", "r") as arquivo:
+        linhas = arquivo.readlines()
+        for i in range(len(linhas)):
+            if nome_formatado.lower() in linhas[i].lower():
+                reserva_encontrada = linhas[i]
+        return reserva_encontrada
+                
+def visualizarReserva():
+    reserva_encontrada = []
+    os.system("clear") or None
+    while len(reserva_encontrada) == 0:
+        nome_reserva = input("Digite seu nome para buscarmos a reserva. "
+                             "\nCaso deseje voltar para selecionar outra funcionalidade digite 0 ou nada: ")
+        
+        if nome_reserva == "" or nome_reserva == "0":
+            reserva_encontrada.append("Sair")
+        else:
+            reserva_encontrada = encontrarReserva(nome_reserva)
+            if len(reserva_encontrada) > 0:
+                reserva_encontrada = reserva_encontrada.split(" = ")
+                reserva_encontrada[1] = eval(reserva_encontrada[1])
+                
+                os.system("clear") or None
+                print(
+                    "===================================================\n"
+                    "RESERVA ENCONTRADA!\n"
+                    "===================================================\n"
+                    f"\nAbaixo segue resumo da reserva de {reserva_encontrada[0].capitalize()}:\n"
+                )
+                for key in reserva_encontrada[1]:
+                    print(f"{key}: {reserva_encontrada[1][key]}")
+            else:
+                os.system("clear") or None
+                print("===================================================")
+                print("\nA reserva não foi encontrada, por favor tente novamente.\n")
+                print("===================================================")
+
+def editarReserva():
+    reserva_encontrada = ""
+    os.system("clear") or None
+    while len(reserva_encontrada) == 0:
+        nome_reserva = input("Digite seu nome para buscarmos a reserva. "
+                                "\nCaso deseje voltar para selecionar outra funcionalidade digite 0 ou nada: ")
+        
+        if nome_reserva == "" or nome_reserva == "0":
+            reserva_encontrada.append("Sair")
+        else:
+            reserva_encontrada = encontrarReserva(nome_reserva)
+            if len(reserva_encontrada) > 0:
+                reserva_encontrada_formatada = reserva_encontrada.split(" = ")
+                reserva_encontrada_formatada[1] = eval(reserva_encontrada_formatada[1])
+                os.system("clear") or None
+                print(
+                    "RESERVA ENCONTRADA!"
+                    f"\nAbaixo segue resumo da reserva de {reserva_encontrada_formatada[0].capitalize()}:\n"
+                )
+                for key in reserva_encontrada_formatada[1]:
+                    print(f"{key}: {reserva_encontrada_formatada[1][key]}")
+                print("\n---------------------------------------------------\n")
+                realizarReservaRestaurante(reserva_encontrada_formatada[1]["Restaurante"], True, reserva_encontrada)
+                
+            else:
+                os.system("clear") or None
+                print("===================================================")
+                print("\nA reserva não foi encontrada, por favor tente novamente.\n")
+                print("===================================================")
+    
+def cancelarReserva():
+    reserva_encontrada = ""
+    os.system("clear") or None
+    while len(reserva_encontrada) == 0:
+        nome_reserva = input("Digite seu nome para buscarmos a reserva. "
+                             "\nCaso deseje voltar para selecionar outra funcionalidade digite 0 ou nada: ")
+        
+        if nome_reserva == "" or nome_reserva == "0":
+            reserva_encontrada.append("Sair")
+        else:
+            reserva_encontrada = encontrarReserva(nome_reserva)
+            if len(reserva_encontrada) > 0:
+                with open("reservas.txt", "r") as arquivo:
+                    linhas = arquivo.readlines()
+
+                with open("reservas.txt", "w") as arquivo:
+                    for linha in linhas:
+                        if linha != reserva_encontrada:
+                            arquivo.write(linha)
+                            
+                os.system("clear") or None
+                print(
+                    "===================================================\n"
+                    "RESERVA EXCLUÍDA!\n"
+                    "===================================================\n"
+                )
+            else:
+                os.system("clear") or None
+                print("===================================================")
+                print("\nA reserva não foi encontrada, por favor tente novamente.\n")
+                print("===================================================")
+                
+os.system("clear") or None
+print("===================================================")
+print("\nOlá, bem vindo ao FRESERVO!")
+      
+while not parar_execucao:
+    print(  "\n===================================================\n\n"
+            "Escolha qual funcionalidade você deseja acessar:\n\n"
+            "Digite 1: Realizar Reserva\n"
+            "Digite 2: Visualizar Reserva\n"
+            "Digite 3: Editar Reserva\n"
+            "Digite 4: Cancelar Reserva\n"
+            "Digite 5: Parar Execução\n"
+        )
+    escolha = input("Qual a opção desejada. Digite de 1 a 5: ")
+
+    if escolha == "1":
+        filtrarRestaurante()
+    elif escolha == "2":
+        visualizarReserva()
+    elif escolha == "3":
+        editarReserva()
+    elif escolha == "4":
+        cancelarReserva()
+    elif escolha == "5":
+        parar_execucao = True
+    else:
         os.system("clear") or None
         print("===================================================")
-        print("\nA opção digitada não existe, por favor tente novamente.\n")
-        print("===================================================")
+        print(
+            "\nA opção digitada não existe, por favor tente novamente."
+        )
+        
+
+
+

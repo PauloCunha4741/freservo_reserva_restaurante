@@ -1,0 +1,3 @@
+Paulo = {'Restaurante': 'Cais Rooftop Lounge Bar', 'Data': '11/11/2023', 'Turno': 'Tarde', 'Quantidade de Pessoas': '1', 'Nome': 'Paulo', 'Telefone': '999999999', 'Email': 'cunhapaulo@gmail.com'}
+Rodrigo = {'Restaurante': 'Olinda Art&Grill', 'Data': '13/11/2023', 'Turno': 'Noite', 'Quantidade de Pessoas': '10', 'Nome': 'Rodrigo', 'Telefone': '99999999', 'Email': 'rodsrods@gmail.com'}
+Ana = {'Restaurante': 'Ça Va', 'Data': '12/11/2023', 'Turno': 'Noite', 'Quantidade de Pessoas': '10', 'Nome': 'Ana', 'Telefone': '99999999', 'Email': 'ana@gmail.com'}
